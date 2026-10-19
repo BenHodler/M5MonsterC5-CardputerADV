@@ -28,6 +28,7 @@ idf_component_register(
         "subghz_parser.c"
         "subghz_rf_settings.c"
         "drivers/display.c"
+        "drivers/display_mirror.c"
         "drivers/screenshot.c"
         "drivers/battery.c"
         "drivers/cap_gps.c"
@@ -138,6 +139,7 @@ idf_component_register(
         esp_adc
         nvs_flash
         espressif__qrcode
+        espressif__esp_lcd_ili9341
 )
 
 if(BOARD_LOWER STREQUAL "adv")

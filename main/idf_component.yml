@@ -4,3 +4,6 @@ dependencies:
   # QR encoder used by the SD Card Admin screen to show a Wi-Fi join code
   espressif/qrcode:
     version: "^0.1.0"
+  # ILI9341 panel driver for the external dual-screen mirror (display_mirror.c)
+  espressif/esp_lcd_ili9341:
+    version: ">=1.2.0"

@@ -8,6 +8,7 @@
 
 #include "screenshot.h"
 #include "display.h"
+#include "display_mirror.h"
 #include "esp_log.h"
 #include "esp_vfs_fat.h"
 #include "sdmmc_cmd.h"
@@ -31,6 +32,9 @@ static const char *TAG = "SCREENSHOT";
 #define LORA_CAP_RESET_PIN  5   // Active low — LOW = chip in reset
 #define LORA_CAP_NSS_PIN    14  // Same as SD MOSI; keep HIGH so SX1262 stays deselected
 
+#if !DISPLAY_MIRROR_ENABLED
+// Skipped when the external ILI9341 mirror is compiled in: GPIO5/GPIO14 are
+// the mirror's CS/MOSI, and this build targets hardware with no SX1262.
 static void lora_cap_hold_reset(void)
 {
     gpio_config_t io = {
@@ -44,6 +48,7 @@ static void lora_cap_hold_reset(void)
     gpio_set_level(LORA_CAP_RESET_PIN, 0); // hold SX1262 in reset
     gpio_set_level(LORA_CAP_NSS_PIN, 1);   // NSS high = deselected
 }
+#endif // !DISPLAY_MIRROR_ENABLED
 
 // SD card mount point
 #define MOUNT_POINT     "/sdcard"
@@ -118,9 +123,14 @@ esp_err_t screenshot_init(void)
     // Cap LoRa-1262: SX1262 shares GPIO14 (its NSS) with SD MOSI and GPIO39 (MISO).
     // Assert hardware reset so SX1262 never drives MISO during SD operations.
     // Then wait for the SPI lines to settle (LoRa CAP cable adds capacitance).
+#if !DISPLAY_MIRROR_ENABLED
     lora_cap_hold_reset();
     ESP_LOGI(TAG, "LoRa CAP SX1262 held in reset (GPIO%d=0, GPIO%d=1)",
              LORA_CAP_RESET_PIN, LORA_CAP_NSS_PIN);
+#else
+    // External display mirror owns GPIO5/GPIO14 (ILI9341 CS/MOSI); do not park them.
+    ESP_LOGI(TAG, "LoRa CAP parking skipped (display mirror owns GPIO5/14)");
+#endif
     vTaskDelay(pdMS_TO_TICKS(50));
 
     // Initialize SPI bus for SD card
@@ -134,7 +144,9 @@ esp_err_t screenshot_init(void)
     };
     
     esp_err_t ret = spi_bus_initialize(SD_SPI_HOST, &bus_cfg, SPI_DMA_CH_AUTO);
-    if (ret != ESP_OK) {
+    // ESP_ERR_INVALID_STATE means the bus is already up (e.g. the external
+    // display mirror initialised SPI3 at boot). That is fine — share it.
+    if (ret != ESP_OK && ret != ESP_ERR_INVALID_STATE) {
         ESP_LOGE(TAG, "Failed to initialize SPI bus: %s", esp_err_to_name(ret));
         return ret;
     }

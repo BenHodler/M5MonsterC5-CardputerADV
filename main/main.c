@@ -12,6 +12,7 @@
 #include "esp_timer.h"
 
 #include "display.h"
+#include "drivers/display_mirror.h"
 #include "keyboard.h"
 #include "uart_handler.h"
 #include "screen_manager.h"
@@ -172,6 +173,11 @@ void app_main(void)
         return;
     }
     display_set_backlight(settings_get_screen_brightness());
+
+    // External ILI9341 dual-screen mirror (optional; no-op if not present/enabled)
+    if (display_mirror_init() != ESP_OK) {
+        ESP_LOGW(TAG, "External display mirror not initialized (continuing)");
+    }
 
     // Draw boot screen once — subsequent boot_set() calls update only changed rows
     boot_screen_init();
