@@ -136,7 +136,7 @@ esp_err_t display_mirror_init(void)
     ESP_ERROR_CHECK(esp_lcd_panel_reset(s_panel));
     ESP_ERROR_CHECK(esp_lcd_panel_init(s_panel));
     ESP_ERROR_CHECK(esp_lcd_panel_swap_xy(s_panel, true));     // landscape 320x240
-    ESP_ERROR_CHECK(esp_lcd_panel_mirror(s_panel, false, false)); // TUNE if flipped
+    ESP_ERROR_CHECK(esp_lcd_panel_mirror(s_panel, true, true));  // 180° (panel mounted upside down)
 #if MIRROR_INVERT
     ESP_ERROR_CHECK(esp_lcd_panel_invert_color(s_panel, true));
 #endif
